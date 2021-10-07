@@ -34,15 +34,16 @@ Ramu Kaka is usually the eldest non-blood relative member of the family that loo
 He’ll cook food, groom your pets, greet your guests, remember their birthdays and also btw help in your work (Yea, Jarvis).
 
 
+
 Ramu Kaka is an emotion.
 
 
-\
 
- ![](/api/attachments.redirect?id=0bba7cb4-a2a1-4b10-b6c3-9403a641d68e)Steoretypical pic of Ramu Kaka from the movie Sholay.
+![image (1)](https://user-images.githubusercontent.com/15616412/136360090-fddee6b2-5676-4a05-b422-00fc153c2f9d.jpeg)
+Steoretypical pic of Ramu Kaka from the movie Sholay.
 
 
-\
+
 ## Public Toilet
 
 <https://www.instagram.com/p/CTRqx8nBxLm/?utm_medium=copy_link>
@@ -54,20 +55,17 @@ Ramu Kaka is an emotion.
 [https://youtu.be/eWBXqjG9X0w](https://youtu.be/eWBXqjG9X0w)
 
 
-\
+
 ## Meeting reminders
 
 @channel pls keep Goog Cal open in chrome all the time or have a system to set recurring alarms, I see that sometimes ppl don’t realize when a mtg is there and others have to call to remind…not a good cycle to be in
 
-<https://shoppinpal.slack.com/archives/G0UGXKB3M/p1630037124003700>
-
 
 ## Change Alexa Name
 
-[https://youtu.be/skd1eYO64tU](https://youtu.be/skd1eYO64tU)
+https://youtu.be/skd1eYO64tU
 
 
-\
 ## Standup
 
 * Check tasks in Asana
@@ -81,17 +79,16 @@ Ramu Kaka is an emotion.
       * Depending on member timezones
     * Or show just numbers/percentage of task completion
     * Channel name: sys-standup
-  * \
+  * 
 
+![image (3)](https://user-images.githubusercontent.com/15616412/136360282-daa29bd2-ec32-47fa-8f34-3dc7975438fa.png)
 
- ![](/api/attachments.redirect?id=8413c96f-8971-46f2-98d4-24e67884a51d)
 
 ## Google Assistant & Alexa in one Speaker
 
 [https://youtu.be/LoNjPXKaqSE](https://youtu.be/LoNjPXKaqSE)
 
 
-\
 ## Smart Mirror
 
 [https://youtu.be/aa3VVZA0e5Y](https://youtu.be/aa3VVZA0e5Y)
