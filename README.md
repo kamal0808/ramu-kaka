@@ -1,8 +1,6 @@
 # Ramu Kaka
 Universal ecosystem around automation with voice assistants
 
-# Ramu Kaka
-
 
 ## The Problem
 
