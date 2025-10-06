@@ -1,99 +1,84 @@
-# Ramu Kaka
-Universal ecosystem around automation with voice assistants
+# Ramu Kaka - AI Assistant Ecosystem
 
+Universal ecosystem around automation with AI assistants built with Next.js and CopilotKit.
 
-## The Problem
+## Features
 
-Voice Assistants, as we know, are the future of automating a tonne of things for us. But the average Joe doesn’t use ‘em because they are too difficult to configure and train. Also, existing virtual assistants are too limited.
+- **Agentic Chat UI**: Interactive AI assistant powered by CopilotKit
+- **Task Management**: AI can add and manage tasks
+- **Real-time State Sharing**: AI has access to application state
+- **Modern UI**: Built with Next.js 15, Tailwind CSS, and CopilotKit
 
+## Getting Started
 
-For example, Google Assistant doesn’t remind your work colleague about a blocker you face and that you need a meeting. Ramu Kaka will do that using Google Assistant and some Zapier magic.
+### Prerequisites
 
+- Node.js v22+ (managed with nvm)
+- OpenAI API key
 
-## The Solution
+### Installation
 
-Build the most open-source ecosystem around virtual assistants, which help humans focus on real work and human interactions.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
+3. Set up environment variables:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+   Add your OpenAI API key to `.env.local`:
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
 
-And have some fun with it!
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## Concept
+5. Open [http://localhost:3002](http://localhost:3002) in your browser
 
-Ramu Kaka is a concept. It’s not a product, and will never be.
+## Usage
 
-## Disclaimer
+- The AI assistant (Ramu Kaka) appears in the sidebar
+- You can ask it to add tasks, toggle task completion, or answer questions
+- The AI has access to the current task list and can modify it
+- Try saying: "Add a task to learn React" or "Mark the first task as complete"
 
-We’re not trying to create another Google Assistant or Siri. This repository is going to be used to bring together bots like Google Assistant or Siri and integrate them with other bots across Zapier, IFTTT, etc.
+## Tech Stack
 
-## Why the name Ramu Kaka?
+- **Frontend**: Next.js 15, React, Tailwind CSS
+- **AI Framework**: CopilotKit
+- **Backend**: Next.js API Routes
+- **LLM**: OpenAI GPT (via CopilotKit)
+- **Database**: MongoDB (existing dependency)
 
-Ramu Kaka is a caricature from Bollywood.
+## Project Structure
 
-Ramu Kaka is usually the eldest non-blood relative member of the family that looks after the family’s well-being.
+```
+├── app/
+│   ├── api/copilotkit/     # CopilotKit API endpoint
+│   ├── globals.css         # Global styles
+│   ├── layout.js          # Root layout with CopilotKit provider
+│   └── page.js            # Main page with task management
+├── .env.local             # Environment variables
+├── .nvmrc                 # Node.js version specification
+└── tailwind.config.js     # Tailwind CSS configuration
+```
 
-He’ll cook food, groom your pets, greet your guests, remember their birthdays and also btw help in your work (Yea, Jarvis).
+## Development
 
+The project uses:
+- Node.js v22 (specified in `.nvmrc`)
+- Hot reload for development
+- CopilotKit for AI integration
+- Tailwind CSS for styling
 
+## Next Steps
 
-Ramu Kaka is an emotion.
-
-
-
-![image (1)](https://user-images.githubusercontent.com/15616412/136360090-fddee6b2-5676-4a05-b422-00fc153c2f9d.jpeg)
-Steoretypical pic of Ramu Kaka from the movie Sholay.
-
-
-
-## Public Toilet
-
-<https://www.instagram.com/p/CTRqx8nBxLm/?utm_medium=copy_link>
-
-
-### Python get started
-
-
-[https://youtu.be/eWBXqjG9X0w](https://youtu.be/eWBXqjG9X0w)
-
-
-
-## Meeting reminders
-
-@channel pls keep Goog Cal open in chrome all the time or have a system to set recurring alarms, I see that sometimes ppl don’t realize when a mtg is there and others have to call to remind…not a good cycle to be in
-
-
-## Change Alexa Name
-
-https://youtu.be/skd1eYO64tU
-
-
-## Standup
-
-* Check tasks in Asana
-  * Send proper slack reminders to all collaborators in tasks
-    * Send in slack threads?
-    * If not, then direct messages
-  * Create a daily summary of today’s tasks for the collaborators
-  * Post an update on standup channel about progress of tasks
-    * Show task timeline?
-    * Decide frequency of updates
-      * Depending on member timezones
-    * Or show just numbers/percentage of task completion
-    * Channel name: sys-standup
-  * 
-
-![image (3)](https://user-images.githubusercontent.com/15616412/136360282-daa29bd2-ec32-47fa-8f34-3dc7975438fa.png)
-
-
-## Google Assistant & Alexa in one Speaker
-
-[https://youtu.be/LoNjPXKaqSE](https://youtu.be/LoNjPXKaqSE)
-
-
-## Smart Mirror
-
-[https://youtu.be/aa3VVZA0e5Y](https://youtu.be/aa3VVZA0e5Y)
-
-
-## Custom Siri Audio Introductions
-[https://youtu.be/ZVZU31z0c4I](https://youtu.be/ZVZU31z0c4I)
-
+- Add more AI actions and capabilities
+- Integrate with MongoDB for persistent storage
+- Add user authentication
+- Expand the AI assistant's knowledge base

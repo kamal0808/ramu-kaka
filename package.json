@@ -1,15 +1,32 @@
 {
   "name": "ramu-kaka",
   "version": "1.0.0",
-  "description": "Universal ecosystem around automation with voice assistants",
+  "description": "Universal ecosystem around automation with AI assistants",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^5.8.0"
+    "@copilotkit/backend": "^0.37.0",
+    "@copilotkit/react-core": "^1.10.5",
+    "@copilotkit/react-ui": "^1.10.5",
+    "@copilotkit/runtime": "^1.10.5",
+    "@copilotkit/runtime-client-gql": "^1.10.5",
+    "mongodb": "^5.8.0",
+    "next": "^15.5.4",
+    "openai": "^4.104.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14"
   }
 }
