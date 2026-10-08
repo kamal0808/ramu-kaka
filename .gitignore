@@ -1,34 +1,102 @@
-# Dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-
-# Production
-/build
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env*.local
+# Secrets — never commit
 .env
+.env.*
+!.env.example
+*.token
+*.key
 
-# Vercel
-.vercel
+# Live state is local-only; it churns every 20 min and can hold location data
+state.json
 
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
+# daemon.py runtime artifacts -- personal data (message content, ClickUp/
+# calendar summaries) and noisy churn, same reasoning as state.json above
+pending.json
+daemon.log
+daemon.log.*
+logs/
+.daemon.lock
+daybuild_state.json
+pattern_state.json
+conversation_history.json
+email_watches.json
+telegram_media/
+
+# OS / tooling
+.DS_Store
+node_modules/
+__pycache__/
+.last_update
+.claude/scheduled_tasks.lock
+
+# Durable memory: personal, runtime-written (see ramu_memory.py)
+memory/
+conversation_log.jsonl
+memory_reflect_state.json
+
+# Capability library: self-written playbooks/scripts, personal (see ramu_capabilities.py)
+capabilities/
+
+# Blockers state + watcher inbox (runtime, personal)
+blockers.json
+synthetic_inbox.json
+
+# Round-trip RPC door (rpc_loop + ramu_mcp.py): transient request queue and
+# per-request replies. Personal message content; local to whichever machine
+# runs the daemon.
+rpc_inbox.json
+rpc_inbox.json.tmp
+rpc_responses/
+
+# Structured life data (ramu_store.py) + the generated dashboard that
+# renders it -- net worth, sleep, habit history. Personal, local-only, must
+# never end up in a commit even by accident.
+life.db
+life.db-journal
+life.db-wal
+life.db-shm
+dashboard.html
+
+# Life skills (.claude/skills): hold health, habit and money specifics -- personal, never committed
+.claude/skills/
+
+# Scheduled promises (ramu_promises.py): runtime, per-machine
+promises.json
+promises.json.tmp
+
+# Device inbox + overnight shift (ramu_ingest.py, daemon.py): location and
+# phone events are the most sensitive data here -- local to the daemon machine, never committed
+presence.json
+presence.json.tmp
+device_events.jsonl
+overnight_state.json
+overnight_state.json.tmp
+synthetic_inbox.json.tmp
+places.json
+places.json.tmp
+bank_mail_state.json
+bank_mail_state.json.tmp
+footprint.json
+footprint.json.tmp
+weekly_state.json
+weekly_state.json.tmp
+people.json
+people.json.tmp
+goals.json
+goals.json.tmp
+health_state.json
+health_state.json.tmp
+learning_state.json
+learning_state.json.tmp
+
+# Self-improvement log (ramu_friction.py): the person's frustrations, verbatim -- never committed
+frictions.json
+frictions.json.tmp
+calls_state.json
+calls_state.json.tmp
+
+# Who this Ramu Kaka looks after (see ramu_profile.py): personal, never committed
+profile.json
+
+# Local agent notes and per-machine instructions
+.claude/
+CLAUDE.local.md

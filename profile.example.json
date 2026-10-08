@@ -1,0 +1,22 @@
+{
+  "_comment": "Copy to profile.json (gitignored) and fill in. Every integration is optional: leave an id empty and that part stays off.",
+  "name": "Asha",
+  "pronoun": "she",
+  "timezone": "UTC",
+  "home_city": "",
+  "work_context": "",
+  "instructions_file": "CLAUDE.md",
+  "telegram_chat_id": null,
+  "phone_number": "",
+  "clickup_list_id": "",
+  "clickup_user_id": null,
+  "gmail_personal_account": "",
+  "gmail_work_account": "",
+  "personal_calendar_account": "",
+  "personal_calendar_id": "",
+  "work_calendar_account": "",
+  "work_calendar_id": "",
+  "slack_account": "",
+  "slack_team_id": "",
+  "bank_alert_senders": []
+}
