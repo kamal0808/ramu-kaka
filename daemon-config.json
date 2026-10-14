@@ -1,0 +1,31 @@
+{
+  "_comment": "Tunable knobs for daemon.py. Edit this file and restart the daemon (launchctl kickstart -k, or just quit/relaunch the process) to pick up changes -- no code edit needed. All intervals are in seconds.",
+
+  "telegram_poll_interval_seconds": 1,
+  "_telegram_poll_interval_seconds_comment": "Pause between listen.sh calls. Now 1s because listen.sh long-polls (telegram_long_poll_seconds, default 20): Telegram holds the call open and returns the moment a message lands.",
+
+  "clickup_check_interval_seconds": 600,
+  "_clickup_check_interval_seconds_comment": "How often a `claude -p` call is made to check the ClickUp list set in profile.json (clickup_list_id) for anything due/upcoming/newly commented. Default 10 min.",
+
+  "calendar_check_interval_seconds": 600,
+  "_calendar_check_interval_seconds_comment": "How often a `claude -p` call is made to check today's Google Calendar for anything upcoming/changed. Default 10 min.",
+
+  "queue_drain_interval_seconds": 900,
+  "_queue_drain_interval_seconds_comment": "How often the daemon checks pending.json. If empty, this costs ZERO claude calls -- the check is a local file read. Default 15 min per spec.",
+
+  "lock_stale_seconds": 600,
+  "_lock_stale_seconds_comment": "If .daemon.lock is older than this, it is assumed to belong to a dead/crashed process and is reclaimed. Should be comfortably longer than claude_timeout_seconds.",
+
+  "claude_timeout_seconds": 180,
+  "_claude_timeout_seconds_comment": "Hard timeout for any single `claude -p` subprocess call, so a hung call can't wedge a loop forever.",
+
+  "claude_binary": "claude",
+  "claude_model": "sonnet",
+
+  "log_max_bytes": 5242880,
+  "_log_max_bytes_comment": "daemon.log rotates to daemon.log.1 past this size (5 MiB default).",
+
+  "mail_enabled": false,
+  "whatsapp_enabled": false,
+  "_mail_whatsapp_comment": "Both TODO -- neither is connected yet. Flags exist so a future loop can be added here without a schema change; daemon.py currently does not start loops for either."
+}
