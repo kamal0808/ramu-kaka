@@ -14,6 +14,9 @@ import android.os.PowerManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.nsd.NsdManager;
+import android.net.nsd.NsdServiceInfo;
+import java.net.Inet4Address;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.WindowManager;
@@ -27,6 +30,7 @@ import java.net.Socket;
 public class MainActivity extends Activity {
     static final int PORT = 5577;
     static final int RATE = 16000;
+
 
     TextView button;
     volatile boolean streaming;
@@ -55,15 +59,43 @@ public class MainActivity extends Activity {
         // Wear OS routes traffic over the phone's Bluetooth by default; ask for Wi-Fi so the Mac on the LAN is reachable.
         cm = getSystemService(ConnectivityManager.class);
         wifiCallback = new ConnectivityManager.NetworkCallback() {
-            @Override public void onAvailable(Network n) { wifi = n; }
+            @Override public void onAvailable(Network n) { wifi = n; findMac(n); }
             @Override public void onLost(Network n) { if (n.equals(wifi)) wifi = null; }
         };
         cm.requestNetwork(new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), wifiCallback);
     }
 
+    NsdManager nsd;
+    NsdManager.DiscoveryListener discovery;
+
+    // The Mac announces "_ramumic._tcp" on the LAN; remember whichever Mac answers so any shared Wi-Fi works.
+    void findMac(Network n) {
+        if (discovery != null) return;
+        nsd = getSystemService(NsdManager.class);
+        discovery = new NsdManager.DiscoveryListener() {
+            @Override public void onServiceFound(NsdServiceInfo info) {
+                nsd.resolveService(info, new NsdManager.ResolveListener() {
+                    @Override public void onServiceResolved(NsdServiceInfo r) {
+                        if (r.getHost() instanceof Inet4Address) {
+                            getSharedPreferences("ramu", MODE_PRIVATE).edit().putString("host", r.getHost().getHostAddress()).apply();
+                        }
+                    }
+                    @Override public void onResolveFailed(NsdServiceInfo r, int code) {}
+                });
+            }
+            @Override public void onServiceLost(NsdServiceInfo info) {}
+            @Override public void onDiscoveryStarted(String t) {}
+            @Override public void onDiscoveryStopped(String t) {}
+            @Override public void onStartDiscoveryFailed(String t, int code) { discovery = null; }
+            @Override public void onStopDiscoveryFailed(String t, int code) {}
+        };
+        nsd.discoverServices("_ramumic._tcp", NsdManager.PROTOCOL_DNS_SD, n, Runnable::run, discovery);
+    }
+
     @Override
     protected void onDestroy() {
         streaming = false;
+        if (discovery != null) nsd.stopServiceDiscovery(discovery);
         cm.unregisterNetworkCallback(wifiCallback);
         super.onDestroy();
     }
