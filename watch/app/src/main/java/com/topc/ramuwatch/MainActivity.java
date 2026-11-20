@@ -1,0 +1,120 @@
+package com.topc.ramuwatch;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
+import android.os.PowerManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
+import android.os.Bundle;
+import android.view.Gravity;
+import android.view.WindowManager;
+import android.widget.TextView;
+
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+// Tap to stream the watch mic to the Mac (16 kHz mono PCM16 over TCP), tap again to stop.
+public class MainActivity extends Activity {
+    static final int PORT = 5577;
+    static final int RATE = 16000;
+
+    TextView button;
+    volatile boolean streaming;
+    Network wifi;
+    ConnectivityManager cm;
+    ConnectivityManager.NetworkCallback wifiCallback;
+
+    @Override
+    protected void onCreate(Bundle b) {
+        super.onCreate(b);
+        SharedPreferences prefs = getSharedPreferences("ramu", MODE_PRIVATE);
+        String fromIntent = getIntent().getStringExtra("host");
+        if (fromIntent != null) prefs.edit().putString("host", fromIntent).apply();
+
+        button = new TextView(this);
+        button.setGravity(Gravity.CENTER);
+        button.setTextSize(22);
+        button.setTextColor(Color.WHITE);
+        button.setOnClickListener(v -> toggle());
+        setContentView(button);
+        show("Tap to talk", Color.rgb(40, 40, 40));
+
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+        }
+        // Wear OS routes traffic over the phone's Bluetooth by default; ask for Wi-Fi so the Mac on the LAN is reachable.
+        cm = getSystemService(ConnectivityManager.class);
+        wifiCallback = new ConnectivityManager.NetworkCallback() {
+            @Override public void onAvailable(Network n) { wifi = n; }
+            @Override public void onLost(Network n) { if (n.equals(wifi)) wifi = null; }
+        };
+        cm.requestNetwork(new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), wifiCallback);
+    }
+
+    @Override
+    protected void onDestroy() {
+        streaming = false;
+        cm.unregisterNetworkCallback(wifiCallback);
+        super.onDestroy();
+    }
+
+    void show(String text, int color) {
+        runOnUiThread(() -> { button.setText(text); button.setBackgroundColor(color); });
+    }
+
+    void toggle() {
+        if (streaming) { streaming = false; return; }
+        String host = getSharedPreferences("ramu", MODE_PRIVATE).getString("host", null);
+        if (host == null) { show("No Mac set", Color.rgb(120, 60, 0)); return; }
+        streaming = true;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        show("Listening…\ntap to stop", Color.rgb(170, 30, 30));
+        new Thread(() -> stream(host)).start();
+    }
+
+    void stream(String host) {
+        int min = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        byte[] buf = new byte[Math.max(min, 3200)];
+        AudioRecord rec = null;
+        // Wear OS turns Wi-Fi off within seconds to save battery; hold it (and the CPU) while talking.
+        WifiManager.WifiLock wifiLock = getSystemService(WifiManager.class).createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "ramu:talk");
+        PowerManager.WakeLock cpu = getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ramu:talk");
+        wifiLock.acquire();
+        cpu.acquire(10 * 60 * 1000L);
+        try {
+            for (int i = 0; i < 30 && wifi == null; i++) Thread.sleep(100);
+            Socket s = wifi != null ? wifi.getSocketFactory().createSocket() : new Socket();
+            s.setTcpNoDelay(true);
+            s.connect(new InetSocketAddress(host, PORT), 3000);
+            rec = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE,
+                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buf.length * 4);
+            rec.startRecording();
+            try (OutputStream out = s.getOutputStream()) {
+                while (streaming) {
+                    int n = rec.read(buf, 0, buf.length);
+                    if (n > 0) out.write(buf, 0, n);
+                }
+            }
+            s.close();
+            show("Tap to talk", Color.rgb(40, 40, 40));
+        } catch (Exception e) {
+            show("Can't reach Mac\n" + e.getClass().getSimpleName(), Color.rgb(120, 60, 0));
+        } finally {
+            streaming = false;
+            wifiLock.release();
+            if (cpu.isHeld()) cpu.release();
+            if (rec != null) { rec.stop(); rec.release(); }
+            runOnUiThread(() -> getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
+        }
+    }
+}
