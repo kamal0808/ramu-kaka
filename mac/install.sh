@@ -24,5 +24,6 @@ EOF
   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/$label.plist
 }
 agent com.topc.watch-mic "$HOME/Applications/Watch Mic.app/Contents/MacOS/watch-mic"
+agent com.topc.watch-mic-beacon /usr/bin/nc -lk 5578
 agent com.topc.watch-mic-bonjour /usr/bin/dns-sd -R "Watch Mic" _ramumic._tcp local 5577
 echo "Watch Mic installed and running"

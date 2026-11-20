@@ -18,6 +18,7 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import java.net.Inet4Address;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -29,6 +30,7 @@ import java.net.Socket;
 // Tap to stream the watch mic to the Mac (16 kHz mono PCM16 over TCP), tap again to stop.
 public class MainActivity extends Activity {
     static final int PORT = 5577;
+    static final int BEACON = 5578;  // Mac answers here so finding it never starts a dictation
     static final int RATE = 16000;
 
 
@@ -71,11 +73,13 @@ public class MainActivity extends Activity {
     // The Mac announces "_ramumic._tcp" on the LAN; remember whichever Mac answers so any shared Wi-Fi works.
     void findMac(Network n) {
         if (discovery != null) return;
+        Log.i("RamuWatch", "discovery on " + (n == null ? "default network" : "wifi " + n));
         nsd = getSystemService(NsdManager.class);
         discovery = new NsdManager.DiscoveryListener() {
             @Override public void onServiceFound(NsdServiceInfo info) {
                 nsd.resolveService(info, new NsdManager.ResolveListener() {
                     @Override public void onServiceResolved(NsdServiceInfo r) {
+                        Log.i("RamuWatch", "resolved " + r.getHost());
                         if (r.getHost() instanceof Inet4Address) {
                             getSharedPreferences("ramu", MODE_PRIVATE).edit().putString("host", r.getHost().getHostAddress()).apply();
                         }
@@ -86,10 +90,11 @@ public class MainActivity extends Activity {
             @Override public void onServiceLost(NsdServiceInfo info) {}
             @Override public void onDiscoveryStarted(String t) {}
             @Override public void onDiscoveryStopped(String t) {}
-            @Override public void onStartDiscoveryFailed(String t, int code) { discovery = null; }
+            @Override public void onStartDiscoveryFailed(String t, int code) { Log.i("RamuWatch", "discovery failed " + code); discovery = null; }
             @Override public void onStopDiscoveryFailed(String t, int code) {}
         };
-        nsd.discoverServices("_ramumic._tcp", NsdManager.PROTOCOL_DNS_SD, n, Runnable::run, discovery);
+        if (n != null) nsd.discoverServices("_ramumic._tcp", NsdManager.PROTOCOL_DNS_SD, n, Runnable::run, discovery);
+        else nsd.discoverServices("_ramumic._tcp", NsdManager.PROTOCOL_DNS_SD, discovery);
     }
 
     @Override
@@ -106,15 +111,47 @@ public class MainActivity extends Activity {
 
     void toggle() {
         if (streaming) { streaming = false; return; }
-        String host = getSharedPreferences("ramu", MODE_PRIVATE).getString("host", null);
-        if (host == null) { show("No Mac set", Color.rgb(120, 60, 0)); return; }
         streaming = true;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         show("Listening…\ntap to stop", Color.rgb(170, 30, 30));
-        new Thread(() -> stream(host)).start();
+        new Thread(this::stream).start();
     }
 
-    void stream(String host) {
+    static boolean reachable(String host, int ms) {
+        try (Socket t = new Socket()) { t.connect(new InetSocketAddress(host, BEACON), ms); return true; } catch (Exception e) { return false; }
+    }
+
+    // Bonjour often never reaches a watch (routers drop multicast), so knock on every address on our /24 for Watch Mic's port.
+    String scanForMac() throws Exception {
+        String prefix = null, self = null;
+        for (java.net.NetworkInterface ni : java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())) {
+            if (!ni.isUp() || ni.isLoopback() || !ni.getName().startsWith("wlan")) continue;
+            for (java.net.InetAddress a : java.util.Collections.list(ni.getInetAddresses())) {
+                if (a instanceof Inet4Address) { self = a.getHostAddress(); prefix = self.substring(0, self.lastIndexOf('.') + 1); }
+            }
+        }
+        Log.i("RamuWatch", "scanning " + prefix + "*");
+        if (prefix == null) return null;
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(64);
+        java.util.concurrent.CompletionService<String> done = new java.util.concurrent.ExecutorCompletionService<>(pool);
+        final String me = self;
+        for (int i = 1; i < 255; i++) { String h = prefix + i; done.submit(() -> !h.equals(me) && reachable(h, 500) ? h : null); }
+        String found = null;
+        for (int i = 1; i < 255 && found == null; i++) found = done.take().get();
+        pool.shutdownNow();
+        Log.i("RamuWatch", "found " + found);
+        return found;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Samsung freezes the app in the background, which ends discovery; look again each time it's opened.
+        if (discovery != null) { try { nsd.stopServiceDiscovery(discovery); } catch (Exception ignored) {} discovery = null; }
+        findMac(wifi);
+    }
+
+    void stream() {
         int min = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         byte[] buf = new byte[Math.max(min, 3200)];
         AudioRecord rec = null;
@@ -124,13 +161,24 @@ public class MainActivity extends Activity {
         wifiLock.acquire();
         cpu.acquire(10 * 60 * 1000L);
         try {
+            // Record from the tap; a 10 s buffer holds speech while we find the Mac, so the first words aren't lost.
+            rec = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE,
+                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, RATE * 2 * 10);
+            rec.startRecording();
             for (int i = 0; i < 30 && wifi == null; i++) Thread.sleep(100);
+            Log.i("RamuWatch", "tap: wifi=" + wifi + " discovery=" + (discovery != null));
+            if (discovery == null) findMac(wifi);
+            SharedPreferences prefs = getSharedPreferences("ramu", MODE_PRIVATE);
+            for (int i = 0; i < 20 && prefs.getString("host", null) == null; i++) Thread.sleep(100);
+            String host = prefs.getString("host", null);
+            if (host == null || !reachable(host, 400)) {
+                host = scanForMac();
+                if (host != null) prefs.edit().putString("host", host).apply();
+            }
+            if (host == null) throw new java.io.IOException("no Mac found on this Wi-Fi");
             Socket s = wifi != null ? wifi.getSocketFactory().createSocket() : new Socket();
             s.setTcpNoDelay(true);
             s.connect(new InetSocketAddress(host, PORT), 3000);
-            rec = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buf.length * 4);
-            rec.startRecording();
             try (OutputStream out = s.getOutputStream()) {
                 while (streaming) {
                     int n = rec.read(buf, 0, buf.length);
