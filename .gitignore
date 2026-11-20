@@ -32,3 +32,9 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+watch/.gradle/
+watch/build/
+watch/app/build/
+watch/local.properties
+mac/Watch Mic.app/
+*.wav
