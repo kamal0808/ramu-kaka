@@ -65,6 +65,18 @@ public class MainActivity extends Activity {
             @Override public void onLost(Network n) { if (n.equals(wifi)) wifi = null; }
         };
         cm.requestNetwork(new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(), wifiCallback);
+        startListening();
+    }
+
+    // Opening the app (e.g. double-press Home) starts talking straight away; a tap stops.
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        startListening();
+    }
+
+    void startListening() {
+        if (!streaming && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) toggle();
     }
 
     NsdManager nsd;
