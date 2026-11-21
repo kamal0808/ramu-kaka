@@ -35,6 +35,22 @@ func blackHoleID() -> AudioDeviceID? {
     return nil
 }
 
+// VoiceInk follows the system default mic; point it at the watch only while the watch talks.
+func defaultInput() -> AudioDeviceID {
+    var addr = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultInputDevice, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+    var id = AudioDeviceID(0); var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+    AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, &size, &id)
+    return id
+}
+
+func setDefaultInput(_ id: AudioDeviceID) {
+    var addr = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultInputDevice, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+    var dev = id
+    AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, UInt32(MemoryLayout<AudioDeviceID>.size), &dev)
+}
+
+var savedInput: AudioDeviceID?
+
 final class Session {
     let engine = AVAudioEngine()
     let player = AVAudioPlayerNode()
@@ -43,7 +59,9 @@ final class Session {
     var ended = false
     var leftover = Data()
 
+    let device: AudioDeviceID
     init(device: AudioDeviceID) throws {
+        self.device = device
         try engine.outputNode.auAudioUnit.setDeviceID(device)
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
@@ -53,6 +71,8 @@ final class Session {
         NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
             guard let self, !self.released else { return }
             log("audio config changed, restarting")
+            // A restart can fall back to the default output; point it at BlackHole again.
+            try? self.engine.outputNode.auAudioUnit.setDeviceID(self.device)
             try? self.engine.start()
             self.player.play()
         }
@@ -81,6 +101,9 @@ final class Session {
             setShortcut(down: false)
             self.engine.stop()
             log("released shortcut")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                if let prev = savedInput { setDefaultInput(prev); savedInput = nil; log("mic back to laptop") }
+            }
         }
     }
 }
@@ -89,6 +112,10 @@ var current: Session?
 
 func handle(_ conn: NWConnection) {
     guard let dev = blackHoleID() else { log("BlackHole not found"); conn.cancel(); return }
+    // Switch the default mic before our engine starts, so that reshuffle can't knock its output off BlackHole.
+    if savedInput == nil { savedInput = defaultInput() }
+    setDefaultInput(dev)
+    usleep(300_000)
     guard let s = try? Session(device: dev) else { log("audio engine failed"); conn.cancel(); return }
     current = s
     log("watch connected, holding shortcut")
